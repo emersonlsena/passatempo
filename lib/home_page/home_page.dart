@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:dio/dio.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:passatempo/models/triva_question_model.dart';
 
 class HomePage extends StatefulWidget {
@@ -17,6 +18,7 @@ class _HomePageState extends State<HomePage> {
   int current = 0;
   GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
   bool isFront = true;
+  int score = 0;
 
   @override
   void initState() {
@@ -38,22 +40,26 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       log('Error fetching questions: $e');
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Erro ao carregar pergubntas')));
+          .showSnackBar(SnackBar(content: Text('Erro ao carregar perguntas')));
     }
-    for (var i in questions) {
-      log(i.question);
-    }
+    // for (var i in questions) {
+    // log(i.question);
+    // }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Passatempo'),
+        title: Text(
+          'Passatempo',
+          style: GoogleFonts.workSans(
+              fontWeight: FontWeight.bold, color: Colors.brown),
+        ),
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.only(left: 16, right: 16),
+        padding: const EdgeInsets.only(left: 20, right: 20),
         child: Column(
           children: [
             Row(
@@ -63,27 +69,43 @@ class _HomePageState extends State<HomePage> {
                   width: 50,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(40),
-                    color: Colors.blueAccent,
+                    color: const Color.fromARGB(255, 104, 138, 198),
                   ),
                 ),
                 SizedBox(
                   width: 8,
                 ),
-                Text('User'),
+                Text(
+                  'User',
+                  style: GoogleFonts.lato(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 Spacer(),
-                Text('Score'),
+                Text(
+                  'Score',
+                  style: GoogleFonts.lato(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 SizedBox(
                   width: 8,
                 ),
-                Text('0'),
+                Text(
+                  '${score}',
+                  style: GoogleFonts.lato(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
             SizedBox(
-              height: 16,
+              height: 30,
             ),
-            Text('Pergunta ${current + 1}/${questions.length}'),
-            SizedBox(
-              height: 16,
+            Text(
+              'Pergunta ${current + 1}/${questions.length}',
+              style: GoogleFonts.workSans(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+                color: const Color.fromARGB(255, 46, 114, 48),
+              ),
             ),
             questions.isEmpty
                 ? CircularProgressIndicator()
@@ -98,9 +120,9 @@ class _HomePageState extends State<HomePage> {
                       isFront: true,
                       filho: Center(
                           child: Text(
-                        questions.isNotEmpty
-                            ? questions[current].question
-                            : 'Loading...',
+                        //questions.isNotEmpty
+                        questions[current].question,
+                        //: 'Loading...',
                         style: TextStyle(color: Colors.white, fontSize: 24),
                       )),
                     ),
@@ -108,52 +130,53 @@ class _HomePageState extends State<HomePage> {
                       isFront: false,
                       filho: Center(
                         child: Column(
-                          children: questions.isNotEmpty
-                              ? questions[current]
-                                  .options
-                                  .map((resposta) => ListTile(
-                                        title: Text(
-                                          resposta,
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
+                            children: //questions.isNotEmpty
+                                questions[current]
+                                    .options
+                                    .map((resposta) => ListTile(
+                                          title: Text(
+                                            resposta,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                            ),
                                           ),
-                                        ),
-                                        onTap: () {
-                                          if (resposta ==
-                                              questions[current]
-                                                  .correctAnswer) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(SnackBar(
-                                                    content: Text(
-                                                        'Resposta correta')));
-                                            setState(() {
-                                              if (current <
-                                                  questions.length - 1) {
-                                                current++;
-                                                cardKey.currentState!
-                                                    .toggleCard();
-                                              }
-                                            });
-                                          } else {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(SnackBar(
-                                                    content: Text(
-                                                        'Resposta Errada, correta seria: ${questions[current].correctAnswer}')));
-                                            setState(() {
-                                              if (current <
-                                                  questions.length - 1) {
-                                                current++;
-                                                cardKey.currentState!
-                                                    .toggleCard();
-                                              }
-                                            });
-                                          }
-                                        },
-                                      ))
-                                  .toList()
-                              : [],
-                        ),
+                                          onTap: () {
+                                            if (resposta ==
+                                                questions[current]
+                                                    .correctAnswer) {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(SnackBar(
+                                                      content: Text(
+                                                          'Resposta correta')));
+                                              score++;
+                                              setState(() {
+                                                if (current <
+                                                    questions.length - 1) {
+                                                  current++;
+                                                  cardKey.currentState!
+                                                      .toggleCard();
+                                                }
+                                              });
+                                            } else {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(SnackBar(
+                                                      content: Text(
+                                                          'Resposta Errada, correta seria: ${questions[current].correctAnswer}')));
+                                              setState(() {
+                                                if (current <
+                                                    questions.length - 1) {
+                                                  current++;
+                                                  cardKey.currentState!
+                                                      .toggleCard();
+                                                }
+                                              });
+                                            }
+                                          },
+                                        ))
+                                    .toList()
+                            //: [],
+                            ),
                       ),
                     ),
                   ),
@@ -176,9 +199,9 @@ class TriviaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: Duration(seconds: 2),
-      margin: EdgeInsets.all(10),
-      constraints: BoxConstraints(minHeight: 200),
+      duration: Duration(seconds: 5),
+      margin: EdgeInsets.all(5),
+      constraints: BoxConstraints(minHeight: 250),
       padding: EdgeInsets.all(20),
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
