@@ -27,12 +27,19 @@ class _HomePageState extends State<HomePage> {
   final dio = Dio();
 
   void getHttp() async {
-    final response = await dio.get('https://the-trivia-api.com/v2/questions/');
-    setState(() {
-      questions = (response.data as List)
-          .map((item) => TrivaQuestionModel.fromJson(item))
-          .toList();
-    });
+    try {
+      final response =
+          await dio.get('https://the-trivia-api.com/v2/questions/');
+      setState(() {
+        questions = (response.data as List)
+            .map((item) => TrivaQuestionModel.fromJson(item))
+            .toList();
+      });
+    } catch (e) {
+      log('Error fetching questions: $e');
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Erro ao carregar pergubntas')));
+    }
     for (var i in questions) {
       log(i.question);
     }
@@ -74,75 +81,82 @@ class _HomePageState extends State<HomePage> {
             SizedBox(
               height: 16,
             ),
-            Text('Perguntas 1/10'),
+            Text('Pergunta ${current + 1}/${questions.length}'),
             SizedBox(
               height: 16,
             ),
-            FlipCard(
-              key: cardKey,
-              onFlip: () {
-                setState(() {
-                  isFront = !isFront;
-                });
-              },
-              front: TriviaCard(
-                isFront: true,
-                filho: Center(
-                    child: Text(
-                  questions.isNotEmpty
-                      ? questions[current].question
-                      : 'Loading...',
-                  style: TextStyle(color: Colors.white, fontSize: 24),
-                )),
-              ),
-              back: TriviaCard(
-                isFront: false,
-                filho: Center(
-                  child: Column(
-                    children: questions.isNotEmpty
-                        ? questions[current]
-                            .options
-                            .map((resposta) => ListTile(
-                                  title: Text(
-                                    resposta,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    if (resposta ==
-                                        questions[current].correctAnswer) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                              content:
-                                                  Text('Resposta correta')));
-                                      setState(() {
-                                        if (current < questions.length - 1) {
-                                          current++;
-                                          cardKey.currentState!.toggleCard();
-                                        }
-                                      });
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                              content: Text(
-                                                  'Resposta Errada, correta seria: ${questions[current].correctAnswer}')));
-                                      setState(() {
-                                        if (current < questions.length - 1) {
-                                          current++;
-                                          cardKey.currentState!.toggleCard();
-                                        }
-                                      });
-                                    }
-                                  },
-                                ))
-                            .toList()
-                        : [],
+            questions.isEmpty
+                ? CircularProgressIndicator()
+                : FlipCard(
+                    key: cardKey,
+                    onFlip: () {
+                      setState(() {
+                        isFront = false;
+                      });
+                    },
+                    front: TriviaCard(
+                      isFront: true,
+                      filho: Center(
+                          child: Text(
+                        questions.isNotEmpty
+                            ? questions[current].question
+                            : 'Loading...',
+                        style: TextStyle(color: Colors.white, fontSize: 24),
+                      )),
+                    ),
+                    back: TriviaCard(
+                      isFront: false,
+                      filho: Center(
+                        child: Column(
+                          children: questions.isNotEmpty
+                              ? questions[current]
+                                  .options
+                                  .map((resposta) => ListTile(
+                                        title: Text(
+                                          resposta,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        onTap: () {
+                                          if (resposta ==
+                                              questions[current]
+                                                  .correctAnswer) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(SnackBar(
+                                                    content: Text(
+                                                        'Resposta correta')));
+                                            setState(() {
+                                              if (current <
+                                                  questions.length - 1) {
+                                                current++;
+                                                cardKey.currentState!
+                                                    .toggleCard();
+                                              }
+                                            });
+                                          } else {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(SnackBar(
+                                                    content: Text(
+                                                        'Resposta Errada, correta seria: ${questions[current].correctAnswer}')));
+                                            setState(() {
+                                              if (current <
+                                                  questions.length - 1) {
+                                                current++;
+                                                cardKey.currentState!
+                                                    .toggleCard();
+                                              }
+                                            });
+                                          }
+                                        },
+                                      ))
+                                  .toList()
+                              : [],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
