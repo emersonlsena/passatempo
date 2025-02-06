@@ -16,6 +16,7 @@ class _HomePageState extends State<HomePage> {
   List<TrivaQuestionModel> questions = [];
   int current = 0;
   GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
+  bool isFront = true;
 
   @override
   void initState() {
@@ -79,47 +80,65 @@ class _HomePageState extends State<HomePage> {
             ),
             FlipCard(
               key: cardKey,
+              onFlip: () {
+                setState(() {
+                  isFront = !isFront;
+                });
+              },
               front: TriviaCard(
+                isFront: true,
                 filho: Center(
                     child: Text(
-                  questions[current].question,
+                  questions.isNotEmpty
+                      ? questions[current].question
+                      : 'Loading...',
                   style: TextStyle(color: Colors.white, fontSize: 24),
                 )),
               ),
               back: TriviaCard(
+                isFront: false,
                 filho: Center(
                   child: Column(
-                    children: questions[current]
-                        .options
-                        .map((resposta) => ListTile(
-                              title: Text(resposta),
-                              onTap: () {
-                                if (resposta ==
-                                    questions[current].correctAnswer) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text('Resposta correta')));
-                                  setState(() {
-                                    if (current < questions.length - 1) {
-                                      current++;
-                                      cardKey.currentState!.toggleCard();
+                    children: questions.isNotEmpty
+                        ? questions[current]
+                            .options
+                            .map((resposta) => ListTile(
+                                  title: Text(
+                                    resposta,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    if (resposta ==
+                                        questions[current].correctAnswer) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content:
+                                                  Text('Resposta correta')));
+                                      setState(() {
+                                        if (current < questions.length - 1) {
+                                          current++;
+                                          cardKey.currentState!.toggleCard();
+                                        }
+                                      });
+                                    } else {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(SnackBar(
+                                              content: Text(
+                                                  'Resposta Errada, correta seria: ${questions[current].correctAnswer}')));
+                                      setState(() {
+                                        if (current < questions.length - 1) {
+                                          current++;
+                                          cardKey.currentState!.toggleCard();
+                                        }
+                                      });
                                     }
-                                  });
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                          content: Text(
-                                              'Resposta Errada, correta seria: ${questions[current].correctAnswer}')));
-                                  setState(() {
-                                    if (current < questions.length - 1) {
-                                      current++;
-                                      cardKey.currentState!.toggleCard();
-                                    }
-                                  });
-                                }
-                              },
-                            ))
-                        .toList(),
+                                  },
+                                ))
+                            .toList()
+                        : [],
                   ),
                 ),
               ),
@@ -133,19 +152,24 @@ class _HomePageState extends State<HomePage> {
 
 class TriviaCard extends StatelessWidget {
   final Widget filho;
+  final bool isFront;
   const TriviaCard({
     required this.filho,
+    required this.isFront,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedContainer(
+      duration: Duration(seconds: 2),
+      margin: EdgeInsets.all(10),
       constraints: BoxConstraints(minHeight: 200),
-      padding: EdgeInsets.all(10),
+      padding: EdgeInsets.all(20),
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
-          color: Colors.blueGrey, borderRadius: BorderRadius.circular(40)),
+          color: isFront ? Colors.brown : Colors.blueGrey,
+          borderRadius: BorderRadius.circular(40)),
       child: filho,
     );
   }
