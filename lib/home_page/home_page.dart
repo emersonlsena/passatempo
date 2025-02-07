@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:dio/dio.dart';
 import 'package:flip_card/flip_card.dart';
 import 'package:flutter/material.dart';
@@ -47,14 +48,77 @@ class _HomePageState extends State<HomePage> {
     // }
   }
 
+//Function to show game over dialog
+  void showGameOverDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Game Over! 🎉"),
+          content: Text('Your Score: $score/${questions.length}'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                restartGame();
+              },
+              child: Text('Play Again'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Exit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  //Function to restar the game
+  void restartGame() {
+    setState(() {
+      current = 0;
+      score = 0;
+      getHttp(); //Reload Questions
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Passatempo',
-          style: GoogleFonts.workSans(
-              fontWeight: FontWeight.bold, color: Colors.brown),
+        title: AnimatedTextKit(
+          repeatForever: true,
+          animatedTexts: [
+            WavyAnimatedText(
+              'Passatempo',
+              textStyle: GoogleFonts.workSans(
+                fontWeight: FontWeight.bold,
+                color: Colors.brown,
+                fontSize: 24,
+              ),
+              speed: Duration(milliseconds: 200),
+            ),
+            ColorizeAnimatedText(
+              'Passatempo',
+              textStyle: GoogleFonts.workSans(
+                fontWeight: FontWeight.bold,
+                color: Colors.brown,
+                fontSize: 24,
+              ),
+              colors: [
+                Colors.brown,
+                Colors.red,
+                Colors.orange,
+                Colors.yellow,
+                Colors.green,
+                Colors.blue,
+              ],
+              speed: Duration(milliseconds: 500),
+            )
+          ],
+          isRepeatingAnimation: true,
         ),
         centerTitle: true,
       ),
@@ -142,6 +206,9 @@ class _HomePageState extends State<HomePage> {
                                             ),
                                           ),
                                           onTap: () {
+                                            bool isCorrect = resposta ==
+                                                questions[current]
+                                                    .correctAnswer;
                                             if (resposta ==
                                                 questions[current]
                                                     .correctAnswer) {
@@ -205,6 +272,14 @@ class TriviaCard extends StatelessWidget {
       padding: EdgeInsets.all(20),
       width: MediaQuery.of(context).size.width,
       decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.8),
+              spreadRadius: 5,
+              blurRadius: 7,
+              offset: Offset(10, 20),
+            )
+          ],
           color: isFront ? Colors.brown : Colors.blueGrey,
           borderRadius: BorderRadius.circular(40)),
       child: filho,

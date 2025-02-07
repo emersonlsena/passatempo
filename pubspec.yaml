@@ -38,6 +38,7 @@ dependencies:
   flip_card: ^0.7.0
   dio: ^5.8.0+1
   google_fonts: ^6.2.1
+  animated_text_kit: ^4.2.3
 
 dev_dependencies:
   flutter_test:
