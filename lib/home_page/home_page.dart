@@ -38,6 +38,7 @@ class _HomePageState extends State<HomePage> {
             .map((item) => TrivaQuestionModel.fromJson(item))
             .toList();
       });
+      timer();
     } catch (e) {
       log('Error fetching questions: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -84,6 +85,31 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  double tempoSec = 15.0;
+  double initialCount = 15.0;
+  double count = 15.0;
+
+  void timer() async {
+    while (current < questions.length - 1) {
+      for (var i = 0.0; i <= tempoSec; i++) {
+        await Future.delayed(Duration(seconds: 1));
+        log(i.toString());
+        setState(() {
+          count--;
+        });
+      }
+      setState(() {
+        if (isFront == false) {
+          cardKey.currentState!.toggleCard();
+          isFront = true;
+        }
+        current++;
+        count = initialCount;
+      });
+    }
+    showGameOverDialog();
+  }
+
   // Function to restart the game
   void restartGame() {
     setState(() {
@@ -99,6 +125,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 238, 255, 7),
         title: AnimatedTextKit(
           repeatForever: true,
           animatedTexts: [
@@ -133,118 +160,144 @@ class _HomePageState extends State<HomePage> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            Row(
+      body: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.only(bottom: 16),
+            color: Color.fromARGB(
+              255,
+              228,
+              255,
+              7,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  height: 50,
-                  width: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(40),
-                    color: Color.fromARGB(255, 104, 138, 198),
-                  ),
-                ),
-                SizedBox(width: 8),
                 Text(
                   'User',
                   style: GoogleFonts.lato(
                       fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-                Spacer(),
-                Text(
-                  'Score',
-                  style: GoogleFonts.lato(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  '$score',
-                  style: GoogleFonts.lato(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
               ],
             ),
-            SizedBox(height: 30),
-            Text(
-              'Pergunta ${current + 1}/${questions.length}',
-              style: GoogleFonts.workSans(
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-                color: Color.fromARGB(255, 46, 114, 48),
-              ),
-            ),
-            questions.isEmpty
-                ? CircularProgressIndicator()
-                : FlipCard(
-                    key: cardKey,
-                    onFlip: () {
-                      setState(() {
-                        isFront = false;
-                      });
-                    },
-                    front: TriviaCard(
-                      isFront: true,
-                      filho: Center(
-                        child: Text(
-                          questions[current].question,
-                          style: TextStyle(color: Colors.white, fontSize: 24),
-                        ),
-                      ),
-                    ),
-                    back: TriviaCard(
-                      isFront: false,
-                      filho: Column(
-                        children: questions[current]
-                            .options
-                            .map((resposta) => ListTile(
-                                  title: Text(
-                                    resposta,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    bool isCorrect = resposta ==
-                                        questions[current].correctAnswer;
-
-                                    if (isCorrect) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                        content: Text('Resposta correta!'),
-                                      ));
-                                      score++;
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                        content: Text(
-                                          'Resposta Errada! Correta seria: ${questions[current].correctAnswer}',
-                                        ),
-                                      ));
-                                    }
-
-                                    if (current >= questions.length - 1) {
-                                      Future.delayed(
-                                          Duration(milliseconds: 500), () {
-                                        showGameOverDialog();
-                                      });
-                                    } else {
-                                      setState(() {
-                                        current++;
-                                        cardKey.currentState!.toggleCard();
-                                      });
-                                    }
-                                  },
-                                ))
-                            .toList(),
+          ),
+          SizedBox(height: 50),
+          Visibility(
+              visible: questions.isNotEmpty,
+              child: TweenAnimationBuilder<double>(
+                tween:
+                    Tween<double>(begin: 0, end: (tempoSec - count) / tempoSec),
+                duration: Duration(milliseconds: 500),
+                builder: (context, value, child) =>
+                    CircularProgressIndicator(value: value),
+              )),
+          questions.isEmpty
+              ? CircularProgressIndicator()
+              : FlipCard(
+                  key: cardKey,
+                  onFlip: () {
+                    setState(() {
+                      isFront = false;
+                    });
+                  },
+                  front: TriviaCard(
+                    isFront: true,
+                    filho: Center(
+                      child: Text(
+                        questions[current].question,
+                        style: TextStyle(color: Colors.white, fontSize: 24),
                       ),
                     ),
                   ),
-          ],
-        ),
+                  back: Stack(
+                    children: [
+                      TriviaCard(
+                        isFront: false,
+                        filho: Column(
+                          children: questions[current]
+                              .options
+                              .map((resposta) => ListTile(
+                                    title: Text(
+                                      resposta,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      bool isCorrect = resposta ==
+                                          questions[current].correctAnswer;
+
+                                      if (isCorrect) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(
+                                          content: Text('Resposta correta!'),
+                                        ));
+                                        score++;
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(SnackBar(
+                                          content: Text(
+                                            'Resposta Errada! Correta seria: ${questions[current].correctAnswer}',
+                                          ),
+                                        ));
+                                      }
+
+                                      if (current >= questions.length - 1) {
+                                        Future.delayed(
+                                            Duration(milliseconds: 500), () {
+                                          showGameOverDialog();
+                                        });
+                                      } else {
+                                        setState(() {
+                                          current++;
+                                          cardKey.currentState!.toggleCard();
+                                        });
+                                      }
+                                    },
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 238, 154, 27),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 8,
+                              )
+                            ],
+                            borderRadius: BorderRadius.circular(
+                              30,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.flip_camera_android_rounded,
+                            color: Colors.white,
+                            size: 32,
+                            weight: 900,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+          SizedBox(height: 24),
+          Text(
+            'Pergunta ${current + 1}/${questions.length}',
+            style: GoogleFonts.workSans(
+              fontSize: 20,
+              fontWeight: FontWeight.w500,
+              color: Color.fromARGB(255, 46, 114, 48),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -273,7 +326,7 @@ class TriviaCard extends StatelessWidget {
             color: Colors.grey.withOpacity(0.8),
             spreadRadius: 5,
             blurRadius: 7,
-            offset: Offset(10, 20),
+            offset: Offset(10, 10),
           )
         ],
         color: isFront ? Colors.brown : Colors.blueGrey,
