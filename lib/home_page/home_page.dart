@@ -126,50 +126,64 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 238, 255, 7),
-        title: AnimatedTextKit(
-          repeatForever: true,
-          animatedTexts: [
-            WavyAnimatedText(
-              'Passatempo',
-              textStyle: GoogleFonts.workSans(
-                fontWeight: FontWeight.bold,
-                color: Colors.brown,
-                fontSize: 24,
+        title: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: AnimatedTextKit(
+            repeatForever: true,
+            animatedTexts: [
+              WavyAnimatedText(
+                'Passatempo',
+                textStyle: GoogleFonts.workSans(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.brown,
+                  fontSize: 24,
+                ),
+                speed: Duration(milliseconds: 200),
               ),
-              speed: Duration(milliseconds: 200),
-            ),
-            ColorizeAnimatedText(
-              'Passatempo',
-              textStyle: GoogleFonts.workSans(
-                fontWeight: FontWeight.bold,
-                color: Colors.brown,
-                fontSize: 24,
-              ),
-              colors: [
-                Colors.brown,
-                Colors.red,
-                Colors.orange,
-                Colors.yellow,
-                Colors.green,
-                Colors.blue,
-              ],
-              speed: Duration(milliseconds: 500),
-            )
-          ],
-          isRepeatingAnimation: true,
+              ColorizeAnimatedText(
+                'Passatempo',
+                textStyle: GoogleFonts.workSans(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.brown,
+                  fontSize: 24,
+                ),
+                colors: [
+                  Colors.brown,
+                  Colors.red,
+                  Colors.orange,
+                  Colors.yellow,
+                  Colors.green,
+                  Colors.blue,
+                ],
+                speed: Duration(milliseconds: 500),
+              )
+            ],
+            isRepeatingAnimation: true,
+          ),
         ),
         centerTitle: true,
       ),
       body: Column(
         children: [
           Container(
-            padding: EdgeInsets.only(bottom: 16),
-            color: Color.fromARGB(
-              255,
-              228,
-              255,
-              7,
+            decoration: BoxDecoration(
+              color: Color.fromARGB(255, 238, 255, 7),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.8),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: Offset(10, 10),
+                ),
+              ],
             ),
+            padding: EdgeInsets.only(bottom: 16),
+            // color: Color.fromARGB(
+            //   255,
+            //   238,
+            //   255,
+            //   7,
+            // ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
