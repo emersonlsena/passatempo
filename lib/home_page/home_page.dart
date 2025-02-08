@@ -21,14 +21,15 @@ class _HomePageState extends State<HomePage> {
   GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
   bool isFront = true;
   int score = 0;
+  int timeLeft = 3;
+  Timer? timer;
+  final dio = Dio();
 
   @override
   void initState() {
     super.initState();
     getHttp();
   }
-
-  final dio = Dio();
 
   void getHttp() async {
     try {
@@ -39,7 +40,7 @@ class _HomePageState extends State<HomePage> {
             .map((item) => TrivaQuestionModel.fromJson(item))
             .toList();
       });
-      countdown();
+      startTimer(); // Start the timer after fetching questions
     } catch (e) {
       log('Error fetching questions: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -48,11 +49,58 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // Function to show game over dialog
+  void startTimer() {
+    timer?.cancel(); // Cancel any existing timer
+    timeLeft = 5; // Reset timer to 3 seconds per question
+
+    timer = Timer.periodic(Duration(seconds: 1), (t) {
+      if (timeLeft > 0) {
+        setState(() {
+          timeLeft--;
+        });
+      } else {
+        t.cancel();
+        moveToNextQuestion();
+      }
+    });
+  }
+
+  void moveToNextQuestion() {
+    if (current < questions.length - 1) {
+      setState(() {
+        current++;
+        if (isFront == false) {
+          cardKey.currentState!.toggleCard();
+        }
+      });
+      startTimer(); // Restart the timer for the next question
+    } else {
+      showGameOverDialog();
+    }
+  }
+
+  void onAnswerSelected(String selectedAnswer) {
+    bool isCorrect = selectedAnswer == questions[current].correctAnswer;
+
+    if (isCorrect) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Resposta correta!'),
+      ));
+      score++;
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+            'Resposta Errada! Correta seria: ${questions[current].correctAnswer}'),
+      ));
+    }
+
+    moveToNextQuestion();
+  }
+
   void showGameOverDialog() {
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevents closing by tapping outside
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text("Game Over! 🎉", textAlign: TextAlign.center),
@@ -86,59 +134,20 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // double tempoSec = 15.0;
-  // double initialCount = 15.0;
-  // double count = 15.0;
-  int timeLeft = 3;
-
-  void countdown() {
-    Timer.periodic(Duration(seconds: 1), (timer) {
-      if (timeLeft > 0) {
-        setState(() {
-          timeLeft--;
-        });
-      } else {
-        timer.cancel();
-        setState(() {
-          current++;
-          if (isFront == false) {
-            cardKey.currentState!.toggleCard();
-          }
-          //cardKey.currentState!.toggleCard();
-        });
-      }
-    });
-  }
-  // void timer() async {
-  //   while (current < questions.length - 1) {
-  //     for (var i = 0.0; i <= tempoSec; i++) {
-  //       await Future.delayed(Duration(seconds: 1));
-  //       log(i.toString());
-  //       setState(() {
-  //         count--;
-  //       });
-  //     }
-  //     setState(() {
-  //       if (isFront == false) {
-  //         cardKey.currentState!.toggleCard();
-  //         isFront = true;
-  //       }
-  //       current++;
-  //       count = initialCount;
-  //     });
-  //   }
-  //   showGameOverDialog();
-  //}
-
-  // Function to restart the game
   void restartGame() {
     setState(() {
       current = 0;
       score = 0;
-      questions = []; // Clear existing questions
+      questions = [];
     });
 
-    getHttp(); // Fetch new questions
+    getHttp();
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -173,7 +182,7 @@ class _HomePageState extends State<HomePage> {
                   Colors.orange,
                   Colors.yellow,
                   Colors.green,
-                  Colors.blue,
+                  Colors.blue
                 ],
                 speed: Duration(milliseconds: 500),
               )
@@ -198,12 +207,6 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
             padding: EdgeInsets.only(bottom: 16),
-            // color: Color.fromARGB(
-            //   255,
-            //   238,
-            //   255,
-            //   7,
-            // ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -216,20 +219,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SizedBox(height: 60),
-
-          Text(
-            '$timeLeft',
-            style: TextStyle(fontSize: 30),
-          ),
-          // Visibility(
-          //     visible: questions.isNotEmpty,
-          //     child: TweenAnimationBuilder<double>(
-          //       tween:
-          //           Tween<double>(begin: 0, end: (tempoSec - count) / tempoSec),
-          //       duration: Duration(milliseconds: 500),
-          //       builder: (context, value, child) =>
-          //           CircularProgressIndicator(value: value),
-          //     )),
+          Text('$timeLeft', style: TextStyle(fontSize: 30)),
           questions.isEmpty
               ? CircularProgressIndicator()
               : FlipCard(
@@ -248,86 +238,22 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  back: Stack(
-                    children: [
-                      TriviaCard(
-                        isFront: false,
-                        filho: Column(
-                          children: questions[current]
-                              .options
-                              .map((resposta) => ListTile(
-                                    title: Text(
-                                      resposta,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      bool isCorrect = resposta ==
-                                          questions[current].correctAnswer;
-
-                                      if (isCorrect) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                          content: Text('Resposta correta!'),
-                                        ));
-                                        score++;
-                                      } else {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                          content: Text(
-                                            'Resposta Errada! Correta seria: ${questions[current].correctAnswer}',
-                                          ),
-                                        ));
-                                      }
-
-                                      if (current >= questions.length - 1) {
-                                        Future.delayed(
-                                            Duration(milliseconds: 500), () {
-                                          showGameOverDialog();
-                                        });
-                                      } else {
-                                        setState(() {
-                                          current++;
-                                          cardKey.currentState!.toggleCard();
-                                        });
-                                      }
-                                    },
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 238, 154, 27),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 8,
-                              )
-                            ],
-                            borderRadius: BorderRadius.circular(
-                              30,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.flip_camera_android_rounded,
-                            color: Colors.white,
-                            size: 32,
-                            weight: 900,
-                          ),
-                        ),
-                      ),
-                    ],
+                  back: TriviaCard(
+                    isFront: false,
+                    filho: Column(
+                      children: questions[current].options.map((resposta) {
+                        return ListTile(
+                          title: Text(resposta,
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 16)),
+                          onTap: () {
+                            onAnswerSelected(resposta);
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-          //SizedBox(height: 8),
           Text(
             'Pergunta ${current + 1}/${questions.length}',
             style: GoogleFonts.workSans(
@@ -345,11 +271,7 @@ class _HomePageState extends State<HomePage> {
 class TriviaCard extends StatelessWidget {
   final Widget filho;
   final bool isFront;
-  const TriviaCard({
-    required this.filho,
-    required this.isFront,
-    super.key,
-  });
+  const TriviaCard({required this.filho, required this.isFront, super.key});
 
   @override
   Widget build(BuildContext context) {
