@@ -21,7 +21,7 @@ class _HomePageState extends State<HomePage> {
   GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
   bool isFront = true;
   int score = 0;
-  int timeLeft = 3;
+  int timeLeft = 15;
   Timer? timer;
   final dio = Dio();
 
@@ -51,7 +51,9 @@ class _HomePageState extends State<HomePage> {
 
   void startTimer() {
     timer?.cancel(); // Cancel any existing timer
-    timeLeft = 5; // Reset timer to 3 seconds per question
+    setState(() {
+      timeLeft = 15; // Reset timer to 15 seconds
+    });
 
     timer = Timer.periodic(Duration(seconds: 1), (t) {
       if (timeLeft > 0) {
@@ -60,41 +62,62 @@ class _HomePageState extends State<HomePage> {
         });
       } else {
         t.cancel();
-        moveToNextQuestion();
+        handleTimeout();
       }
     });
+  }
+
+  void handleTimeout() {
+    if (isFront) {
+      moveToNextQuestion(); // If front, just move to the next question
+    } else {
+      cardKey.currentState?.toggleCard();
+      isFront = true;
+      Future.delayed(Duration(milliseconds: 500), () {
+        moveToNextQuestion();
+      });
+    }
   }
 
   void moveToNextQuestion() {
     if (current < questions.length - 1) {
       setState(() {
         current++;
-        if (isFront == false) {
-          cardKey.currentState!.toggleCard();
-        }
+        isFront = true;
       });
-      startTimer(); // Restart the timer for the next question
+      startTimer(); // Restart timer for the next question
     } else {
       showGameOverDialog();
     }
   }
 
   void onAnswerSelected(String selectedAnswer) {
+    timer?.cancel(); // Stop the timer immediately after an answer is selected
+
     bool isCorrect = selectedAnswer == questions[current].correctAnswer;
 
     if (isCorrect) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Resposta correta!'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Resposta correta!')),
+      );
       score++;
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(
-            'Resposta Errada! Correta seria: ${questions[current].correctAnswer}'),
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Resposta Errada! Correta seria: ${questions[current].correctAnswer}')),
+      );
     }
 
-    moveToNextQuestion();
+    if (!isFront) {
+      cardKey.currentState?.toggleCard();
+      isFront = true;
+      Future.delayed(Duration(milliseconds: 500), () {
+        moveToNextQuestion();
+      });
+    } else {
+      moveToNextQuestion();
+    }
   }
 
   void showGameOverDialog() {
@@ -194,30 +217,6 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Column(
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: Color.fromARGB(255, 238, 255, 7),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.8),
-                  spreadRadius: 5,
-                  blurRadius: 7,
-                  offset: Offset(10, 10),
-                ),
-              ],
-            ),
-            padding: EdgeInsets.only(bottom: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'User',
-                  style: GoogleFonts.lato(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
           SizedBox(height: 60),
           Text('$timeLeft', style: TextStyle(fontSize: 30)),
           questions.isEmpty
@@ -226,7 +225,7 @@ class _HomePageState extends State<HomePage> {
                   key: cardKey,
                   onFlip: () {
                     setState(() {
-                      isFront = false;
+                      isFront = !isFront;
                     });
                   },
                   front: TriviaCard(
@@ -241,16 +240,19 @@ class _HomePageState extends State<HomePage> {
                   back: TriviaCard(
                     isFront: false,
                     filho: Column(
-                      children: questions[current].options.map((resposta) {
-                        return ListTile(
-                          title: Text(resposta,
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 16)),
-                          onTap: () {
-                            onAnswerSelected(resposta);
-                          },
-                        );
-                      }).toList(),
+                      children: questions[current]
+                          .options
+                          .map((resposta) => ListTile(
+                                title: Text(
+                                  resposta,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                onTap: () => onAnswerSelected(resposta),
+                              ))
+                          .toList(),
                     ),
                   ),
                 ),
