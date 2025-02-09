@@ -217,6 +217,30 @@ class _HomePageState extends State<HomePage> {
       ),
       body: Column(
         children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Color.fromARGB(255, 238, 255, 7),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.8),
+                  spreadRadius: 5,
+                  blurRadius: 7,
+                  offset: Offset(10, 10),
+                ),
+              ],
+            ),
+            padding: EdgeInsets.only(bottom: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'User',
+                  style: GoogleFonts.lato(
+                      fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
           SizedBox(height: 60),
           Text('$timeLeft', style: TextStyle(fontSize: 30)),
           questions.isEmpty
@@ -237,23 +261,51 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  back: TriviaCard(
-                    isFront: false,
-                    filho: Column(
-                      children: questions[current]
-                          .options
-                          .map((resposta) => ListTile(
-                                title: Text(
-                                  resposta,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                onTap: () => onAnswerSelected(resposta),
-                              ))
-                          .toList(),
-                    ),
+                  back: Stack(
+                    children: [
+                      TriviaCard(
+                        isFront: false,
+                        filho: Column(
+                          children: questions[current]
+                              .options
+                              .map((resposta) => ListTile(
+                                    title: Text(
+                                      resposta,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    onTap: () => onAnswerSelected(resposta),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 238, 154, 27),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.5),
+                                spreadRadius: 2,
+                                blurRadius: 8,
+                              )
+                            ],
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: const Icon(
+                            Icons.flip_camera_android_rounded,
+                            color: Colors.white,
+                            size: 32,
+                            weight: 900,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
           Text(
