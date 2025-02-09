@@ -23,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   int score = 0;
   int timeLeft = 15;
   Timer? timer;
+  bool isVisible = false;
   final dio = Dio();
 
   @override
@@ -49,19 +50,44 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // void startTimer() {
+  //   timer?.cancel(); // Cancel any existing timer
+  //   setState(() {
+  //     timeLeft = 15; // Reset timer to 15 seconds
+  //   });
+
+  //   timer = Timer.periodic(Duration(seconds: 1), (t) {
+  //     if (timeLeft > 0) {
+  //       setState(() {
+  //         timeLeft--;
+  //       });
+  //     } else {
+  //       t.cancel();
+  //       setState(() {
+  //         isVisible = true;
+  //       });
+  //       handleTimeout();
+  //     }
+  //   });
+  // }
   void startTimer() {
     timer?.cancel(); // Cancel any existing timer
     setState(() {
       timeLeft = 15; // Reset timer to 15 seconds
+      isVisible = false; // Ensure the alarm starts hidden
     });
 
     timer = Timer.periodic(Duration(seconds: 1), (t) {
       if (timeLeft > 0) {
         setState(() {
           timeLeft--;
+          isVisible = timeLeft <= 2; // Show alarm GIF in the last 2 seconds
         });
       } else {
         t.cancel();
+        setState(() {
+          isVisible = false; // Hide alarm when time reaches 0
+        });
         handleTimeout();
       }
     });
@@ -138,18 +164,25 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                restartGame();
-              },
-              child: Text('Play Again', style: TextStyle(fontSize: 16)),
-            ),
-            TextButton(
-              onPressed: () {
-                SystemNavigator.pop();
-              },
-              child: Text('Exit', style: TextStyle(fontSize: 16)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    restartGame();
+                  },
+                  child: Text('Play Again', style: TextStyle(fontSize: 16)),
+                ),
+                SizedBox(width: 50),
+                //Spacer(),
+                TextButton(
+                  onPressed: () {
+                    SystemNavigator.pop();
+                  },
+                  child: Text('Exit', style: TextStyle(fontSize: 16)),
+                ),
+              ],
             ),
           ],
         );
@@ -177,7 +210,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 238, 255, 7),
+        backgroundColor: const Color.fromARGB(255, 66, 206, 71),
         title: Padding(
           padding: const EdgeInsets.only(top: 10),
           child: AnimatedTextKit(
@@ -219,7 +252,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Color.fromARGB(255, 238, 255, 7),
+              color: Color.fromARGB(255, 66, 206, 71),
               boxShadow: [
                 BoxShadow(
                   color: Colors.grey.withOpacity(0.8),
@@ -242,7 +275,19 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           SizedBox(height: 60),
-          Text('$timeLeft', style: TextStyle(fontSize: 30)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('$timeLeft', style: TextStyle(fontSize: 30)),
+              Visibility(
+                visible: isVisible,
+                child: Container(
+                    height: 50,
+                    width: 50,
+                    child: Image.asset('assets/images/alarm.gif')),
+              ),
+            ],
+          ),
           questions.isEmpty
               ? CircularProgressIndicator()
               : FlipCard(
