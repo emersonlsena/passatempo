@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:passatempo/home_page/home_page.dart';
+import 'package:passatempo/start_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const StartPage(),
     );
   }
 }

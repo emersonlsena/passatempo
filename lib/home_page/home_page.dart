@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:passatempo/models/triva_question_model.dart';
+import 'package:passatempo/start_page.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,6 +19,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<TrivaQuestionModel> questions = [];
+  String username = 'User';
+  bool isTimed = true;
   int current = 0;
   GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
   bool isFront = true;
@@ -30,7 +34,19 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     getHttp();
+  }
+
+  Future<void> _loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('username') ?? 'User';
+      isTimed = prefs.getBool('isTimed') ?? true;
+    });
+    if (isTimed) {
+      startTimer();
+    }
   }
 
   void getHttp() async {
@@ -42,7 +58,7 @@ class _HomePageState extends State<HomePage> {
             .map((item) => TrivaQuestionModel.fromJson(item))
             .toList();
       });
-      startTimer(); // Start the timer after fetching questions
+      //startTimer(); // Start the timer after fetching questions
     } catch (e) {
       log('Error fetching questions: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,6 +88,8 @@ class _HomePageState extends State<HomePage> {
   //   });
   // }
   void startTimer() {
+    if (!isTimed) return;
+
     timer?.cancel(); // Cancel any existing timer
     setState(() {
       timeLeft = 15; // Reset timer to 15 seconds
@@ -112,7 +130,9 @@ class _HomePageState extends State<HomePage> {
         current++;
         isFront = true;
       });
-      startTimer(); // Restart timer for the next question
+      if (isTimed) {
+        startTimer();
+      }
     } else {
       showGameOverDialog();
     }
@@ -179,7 +199,9 @@ class _HomePageState extends State<HomePage> {
                 //Spacer(),
                 TextButton(
                   onPressed: () {
-                    SystemNavigator.pop();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (context) => StartPage()),
+                    );
                   },
                   child: Text('Exit', style: TextStyle(fontSize: 16)),
                 ),
@@ -268,7 +290,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'User',
+                  'Hello $username!',
                   style: GoogleFonts.lato(
                       fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -279,7 +301,7 @@ class _HomePageState extends State<HomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('$timeLeft', style: TextStyle(fontSize: 30)),
+              if (isTimed) Text('$timeLeft', style: TextStyle(fontSize: 30)),
               Visibility(
                 visible: isVisible,
                 child: Container(
