@@ -7,11 +7,13 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:passatempo/models/triva_question_model.dart';
 import 'package:passatempo/start_page.dart';
+import 'package:passatempo/widgets/banner_widget.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final String userName;
+  const HomePage({super.key, required this.userName});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -199,8 +201,11 @@ class _HomePageState extends State<HomePage> {
                 //Spacer(),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (context) => StartPage()),
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const StartPage()),
+                      (Route<dynamic> r) => false,
                     );
                   },
                   child: Text('Exit', style: TextStyle(fontSize: 16)),
@@ -290,7 +295,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Hello $username!',
+                  'Hello ${widget.userName}!',
                   style: GoogleFonts.lato(
                       fontSize: 18, fontWeight: FontWeight.bold),
                 ),
@@ -301,7 +306,10 @@ class _HomePageState extends State<HomePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (isTimed) Text('$timeLeft', style: TextStyle(fontSize: 30)),
+              Visibility(
+                visible: !isVisible,
+                child: Text('$timeLeft', style: TextStyle(fontSize: 30)),
+              ),
               Visibility(
                 visible: isVisible,
                 child: Container(
@@ -384,6 +392,7 @@ class _HomePageState extends State<HomePage> {
               color: Color.fromARGB(255, 46, 114, 48),
             ),
           ),
+          BannerWidget(),
         ],
       ),
     );
