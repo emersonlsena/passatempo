@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // google ads
 
 class BannerWidget extends StatefulWidget {
   const BannerWidget({super.key});
@@ -11,16 +11,18 @@ class BannerWidget extends StatefulWidget {
 }
 
 class _BannerWidgetState extends State<BannerWidget> {
-  BannerAd? smallBanner;
-  bool bannerLoaded = false;
+  BannerAd? smallBanner; //google ads
+  bool bannerLoaded = false; //google ads
   @override
   void initState() {
+    //google ads
     // TODO: implement initState
     super.initState();
-    loadBannerAd();
+    loadBannerAd(); //google ads
   }
 
   void loadBannerAd() {
+    //google ads
     smallBanner = BannerAd(
         adUnitId: 'ca-app-pub-3940256099942544/9214589741',
         size: AdSize.banner,

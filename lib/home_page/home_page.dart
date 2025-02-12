@@ -9,11 +9,11 @@ import 'package:passatempo/models/triva_question_model.dart';
 import 'package:passatempo/start_page.dart';
 import 'package:passatempo/widgets/banner_widget.dart';
 import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   final String userName;
-  const HomePage({super.key, required this.userName});
+  final bool isTimer;
+  const HomePage({super.key, required this.userName, required this.isTimer});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -22,32 +22,36 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<TrivaQuestionModel> questions = [];
   String username = 'User';
-  bool isTimed = true;
+  // bool isTimed = true;
   int current = 0;
-  GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
+  //GlobalKey<FlipCardState> cardKey = GlobalKey<FlipCardState>();
+  List<GlobalKey<FlipCardState>> listCardKeys = [];
+
   bool isFront = true;
   int score = 0;
   int timeLeft = 15;
   Timer? timer;
   bool isVisible = false;
   int test = 0;
+  PageController pageController = PageController();
   final dio = Dio();
 
   @override
   void initState() {
     super.initState();
+    pageController = PageController(viewportFraction: .9);
     _loadUserData();
     getHttp();
   }
 
   Future<void> _loadUserData() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      username = prefs.getString('username') ?? 'User';
-      isTimed = prefs.getBool('isTimed') ?? true;
-    });
-    if (isTimed) {
-      startTimer();
+    // SharedPreferences prefs = await SharedPreferences.getInstance();
+    // setState(() {
+    //   username = prefs.getString('username') ?? 'User';
+    //   isTimed = prefs.getBool('isTimed') ?? true;
+    // });
+    if (widget.isTimer) {
+      startTimer(0);
     }
   }
 
@@ -59,6 +63,8 @@ class _HomePageState extends State<HomePage> {
         questions = (response.data as List)
             .map((item) => TrivaQuestionModel.fromJson(item))
             .toList();
+        listCardKeys = List.generate(
+            questions.length, (index) => GlobalKey<FlipCardState>());
       });
       //startTimer(); // Start the timer after fetching questions
     } catch (e) {
@@ -89,8 +95,8 @@ class _HomePageState extends State<HomePage> {
   //     }
   //   });
   // }
-  void startTimer() {
-    if (!isTimed) return;
+  void startTimer(int index) {
+    if (!widget.isTimer) return;
 
     timer?.cancel(); // Cancel any existing timer
     setState(() {
@@ -109,38 +115,45 @@ class _HomePageState extends State<HomePage> {
         setState(() {
           isVisible = false; // Hide alarm when time reaches 0
         });
-        handleTimeout();
+        handleTimeout(index);
       }
     });
   }
 
-  void handleTimeout() {
+  void handleTimeout(int index) {
     if (isFront) {
-      moveToNextQuestion(); // If front, just move to the next question
+      moveToNextQuestion(index); // If front, just move to the next question
     } else {
-      cardKey.currentState?.toggleCard();
+      listCardKeys[index].currentState?.toggleCard();
       isFront = true;
       Future.delayed(Duration(milliseconds: 500), () {
-        moveToNextQuestion();
+        moveToNextQuestion(index);
       });
     }
   }
 
-  void moveToNextQuestion() {
+  void moveToNextQuestion(int index) {
     if (current < questions.length - 1) {
       setState(() {
         current++;
+        if (!isFront) {
+          listCardKeys[index].currentState!.toggleCard();
+        }
         isFront = true;
       });
-      if (isTimed) {
-        startTimer();
+      pageController.nextPage(
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+      if (widget.isTimer) {
+        startTimer(index);
       }
     } else {
       showGameOverDialog();
     }
   }
 
-  void onAnswerSelected(String selectedAnswer) {
+  void onAnswerSelected(String selectedAnswer, int index) {
     timer?.cancel(); // Stop the timer immediately after an answer is selected
 
     bool isCorrect = selectedAnswer == questions[current].correctAnswer;
@@ -159,13 +172,13 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (!isFront) {
-      cardKey.currentState?.toggleCard();
-      isFront = true;
+      //cardKey.currentState?.toggleCard();
+      //isFront = true;
       Future.delayed(Duration(milliseconds: 500), () {
-        moveToNextQuestion();
+        moveToNextQuestion(index);
       });
     } else {
-      moveToNextQuestion();
+      moveToNextQuestion(index);
     }
   }
 
@@ -307,7 +320,7 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Visibility(
-                visible: !isVisible,
+                visible: widget.isTimer && !isVisible,
                 child: Text('$timeLeft', style: TextStyle(fontSize: 30)),
               ),
               Visibility(
@@ -321,67 +334,83 @@ class _HomePageState extends State<HomePage> {
           ),
           questions.isEmpty
               ? CircularProgressIndicator()
-              : FlipCard(
-                  key: cardKey,
-                  onFlip: () {
-                    setState(() {
-                      isFront = !isFront;
-                    });
-                  },
-                  front: TriviaCard(
-                    isFront: true,
-                    filho: Center(
-                      child: Text(
-                        questions[current].question,
-                        style: TextStyle(color: Colors.white, fontSize: 24),
+              : Expanded(
+                  child: PageView.builder(
+                    controller: pageController,
+                    physics: NeverScrollableScrollPhysics(),
+                    itemCount: questions.length,
+                    itemBuilder: (context, index) => Center(
+                      child: FlipCard(
+                        key: listCardKeys[index],
+                        onFlip: () {
+                          setState(() {
+                            isFront = !isFront;
+                          });
+                        },
+                        front: TriviaCard(
+                          isFront: true,
+                          filho: Center(
+                            child: Text(
+                              textAlign: TextAlign.center,
+                              questions[current].question,
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        back: Stack(
+                          children: [
+                            TriviaCard(
+                              isFront: false,
+                              filho: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: questions[current]
+                                    .options
+                                    .map((resposta) => ListTile(
+                                          title: Text(
+                                            resposta,
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                            ),
+                                          ),
+                                          onTap: () =>
+                                              onAnswerSelected(resposta, index),
+                                        ))
+                                    .toList(),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 238, 154, 27),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.white.withOpacity(0.5),
+                                      spreadRadius: 2,
+                                      blurRadius: 8,
+                                    )
+                                  ],
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: const Icon(
+                                  Icons.flip_camera_android_rounded,
+                                  color: Colors.white,
+                                  size: 32,
+                                  weight: 900,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  back: Stack(
-                    children: [
-                      TriviaCard(
-                        isFront: false,
-                        filho: Column(
-                          children: questions[current]
-                              .options
-                              .map((resposta) => ListTile(
-                                    title: Text(
-                                      resposta,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    onTap: () => onAnswerSelected(resposta),
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 238, 154, 27),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.5),
-                                spreadRadius: 2,
-                                blurRadius: 8,
-                              )
-                            ],
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: const Icon(
-                            Icons.flip_camera_android_rounded,
-                            color: Colors.white,
-                            size: 32,
-                            weight: 900,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
           Text(
@@ -392,6 +421,7 @@ class _HomePageState extends State<HomePage> {
               color: Color.fromARGB(255, 46, 114, 48),
             ),
           ),
+          SizedBox(height: 100),
           BannerWidget(),
         ],
       ),
@@ -406,25 +436,28 @@ class TriviaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: Duration(seconds: 2),
+    return Card(
+      elevation: 8,
       margin: EdgeInsets.all(10),
-      constraints: BoxConstraints(minHeight: 200),
-      padding: EdgeInsets.all(20),
-      width: MediaQuery.of(context).size.width,
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.8),
-            spreadRadius: 5,
-            blurRadius: 7,
-            offset: Offset(10, 10),
-          )
-        ],
-        color: isFront ? Colors.brown : Colors.blueGrey,
-        borderRadius: BorderRadius.circular(40),
-      ),
-      child: filho,
+      color: isFront ? Colors.brown : Colors.blueGrey,
+      // constraints: BoxConstraints(minHeight: 200),
+      // padding: EdgeInsets.all(20),
+      // width: MediaQuery.of(context).size.width,
+      // decoration: BoxDecoration(
+      //   boxShadow: [
+      //     BoxShadow(
+      //       color: Colors.grey.withOpacity(0.8),
+      //       spreadRadius: 5,
+      //       blurRadius: 7,
+      //       offset: Offset(10, 10),
+      //     )
+      //   ],
+      //   borderRadius: BorderRadius.circular(40),
+      // ),
+      child: Container(
+          height: 320,
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: filho),
     );
   }
 }

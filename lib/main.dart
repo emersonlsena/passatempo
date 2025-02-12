@@ -3,8 +3,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:passatempo/start_page.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
+  WidgetsFlutterBinding.ensureInitialized(); //google ads
+  MobileAds.instance.initialize(); //google ads
   runApp(const MyApp());
 }
 

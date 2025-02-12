@@ -34,7 +34,12 @@ class StartPageState extends State<StartPage> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => HomePage(userName: username)),
+      MaterialPageRoute(
+        builder: (context) => HomePage(
+          userName: username,
+          isTimer: isTimed,
+        ),
+      ),
     );
   }
 
