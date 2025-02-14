@@ -137,11 +137,23 @@ class StartPageState extends State<StartPage> {
                   backgroundColor: const Color.fromARGB(255, 238, 154, 27),
                 ),
                 onPressed: () {
-                  rewardedService!.show(
-                    onUserEarnedReward: (ad, reward) {},
-                  );
-                  _saveAndProced(true);
-                  log('aaaaaaa');
+                  if (rewardedService != null) {
+                    rewardedService!.fullScreenContentCallback =
+                        FullScreenContentCallback(
+                      onAdDismissedFullScreenContent: (ad) {
+                        ad.dispose();
+                        _saveAndProced(
+                            true); // Navigate only after the ad is closed
+                      },
+                      onAdFailedToShowFullScreenContent: (ad, error) {
+                        ad.dispose();
+                        _saveAndProced(true); // Proceed even if the ad fails
+                      },
+                    );
+                    rewardedService!.show(onUserEarnedReward: (ad, reward) {});
+                  } else {
+                    _saveAndProced(true); // Proceed if ad is not available
+                  }
                 },
                 child: Text(
                   'Play Timed Game',
@@ -153,9 +165,23 @@ class StartPageState extends State<StartPage> {
                   foregroundColor: Colors.white,
                   backgroundColor: const Color.fromARGB(255, 238, 154, 27),
                 ),
-                onPressed: () async {
-                  interstitialService!.show();
-                  _saveAndProced(false);
+                onPressed: () {
+                  if (interstitialService != null) {
+                    interstitialService!.fullScreenContentCallback =
+                        FullScreenContentCallback(
+                      onAdDismissedFullScreenContent: (ad) {
+                        ad.dispose();
+                        _saveAndProced(false);
+                      },
+                      onAdFailedToShowFullScreenContent: (ad, error) {
+                        ad.dispose();
+                        _saveAndProced(false);
+                      },
+                    );
+                    interstitialService!.show();
+                  } else {
+                    _saveAndProced(false);
+                  }
                 },
                 child: Text(
                   'Play Without Timer',
